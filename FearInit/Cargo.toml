@@ -1,0 +1,15 @@
+[package]
+name = "FearInit"
+version = "0.0.1-dev"
+edition = "2024"
+
+[[bin]]
+name = "fearinit"
+path = "main.rs"
+
+[dependencies]
+secure-api = { path = "../SecureApi" }
+#tikv-jemallocator = "0.6" # jemalloc
+tokio = { version = "1", features = ["full"] } # Async
+nix = { version = "0.29.0", features = ["mount", "process", "signal", "user"] }
+libseccomp = "0.3.0" # To Block syscalls
