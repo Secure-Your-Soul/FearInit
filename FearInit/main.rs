@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2026 Denis Rudolf Kontek (Secure Your Soul)
+ * PROPRIETARY AND CONFIDENTIAL / SOURCE-AVAILABLE ONLY.
+ * See local LICENSE file for usage restrictions.
+ */
 use nix::mount::{MsFlags, mount};
 use nix::sys::wait::{WaitPidFlag, waitpid};
 use secure_api::{server_status, verify_programs};

@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) 2026 Denis Rudolf Kontek (Secure Your Soul)
+ * PROPRIETARY AND CONFIDENTIAL / SOURCE-AVAILABLE ONLY.
+ * See local LICENSE file for usage restrictions.
+ */
 use sysinfo::System;
 
 pub fn server_status() {

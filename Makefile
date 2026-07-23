@@ -1,3 +1,8 @@
+#
+#  Copyright (C) 2026 Denis Rudolf Kontek (Secure Your Soul)
+#  PROPRIETARY AND CONFIDENTIAL / SOURCE-AVAILABLE ONLY.
+#  See local LICENSE file for usage restrictions.
+#
 # --- Config ---
 # Linux x86_64 (Standard Intel/AMD Linux - static compilation)
 # Linux ARM64 (e.g., Raspberry Pi 4/5, AWS Graviton servers)
