@@ -8,8 +8,7 @@
 # Linux ARM64 (e.g., Raspberry Pi 4/5, AWS Graviton servers)
 # Linux RISC-V (64-bit RISC-V devices)
 # Linux None (Your Own Kernel)
-TARGETS = x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu riscv64gc-unknown-linux-gnu \
-          x86_64-unknown-linux-musl aarch64-unknown-linux-musl riscv64gc-unknown-linux-musl
+TARGETS = x86_64-unknown-linux-musl aarch64-unknown-linux-musl riscv64gc-unknown-linux-musl
 #		  x86_64-unknown-linux-none aarch64-unknown-linux-none riscv64gc-unknown-linux-none
 RUSTFLAGS_RELEASE = -C link-arg=-Wl,-z,now -C link-arg=-Wl,-z,relro
 RUSTFLAGS_DEV = -C debuginfo=2
