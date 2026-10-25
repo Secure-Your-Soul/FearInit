@@ -17,21 +17,6 @@ linker = "aarch64-linux-gnu-gcc"
 [target.riscv64gc-unknown-linux-gnu]
 linker = "riscv64-linux-gnu-gcc"
 
-# ŚWIAT NONE
+# NONE
 [target.'cfg(target_os = "none")']
 rustflags = ["-C", "link-arg=-nostartfiles"]
-[profile.release]
-opt-level = 3
-lto = true
-codegen-units = 1
-panic = 'abort'
-strip = true
-overflow-checks = false
-
-[profile.dev]
-opt-level = 0    # Max Compression
-lto = false     # How much compile
-codegen-units = 16  # One big block of code (Better compresion)
-panic = 'unwind'    # Deleting Panic Code Resolver (Binary is smaller)
-strip = false       # Deleting symbols
-overflow-checks = true # Turning off overflows when FALSE (More fast but dangerous)
