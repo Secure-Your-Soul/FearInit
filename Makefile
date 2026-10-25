@@ -47,11 +47,11 @@ dev-%:
 	fi; \
 	RUSTFLAGS="$$FLAGS" cargo build --target $*
 test:
-	cargo build --release
+	cargo build --release --target x86_64-unknown-linux-musl
 	podman run --rm -it \
-        --privileged \
-        --pid=private \
-        -v "$PWD":/app:Z \
-        -w /app \
-        rust:latest \
-        ./target/x86_64-unknown-linux-musl/release/FearInit
+		--privileged \
+		--pid=private \
+		-v "$(CURDIR)":/app:Z \
+		-w /app \
+		rust:latest \
+		./target/x86_64-unknown-linux-musl/release/FearInit
