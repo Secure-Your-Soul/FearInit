@@ -2,13 +2,22 @@
 name = "FearInit"
 version = "0.0.1"
 edition = "2024"
+rust-version = "1.98.1"
+license = "AGPL-3.0-or-later"
+authors = ["Denis Kontek <deniskontek@securesouls.com>"]
+description = "A minimalist, secure, and fast PID 1 init system written in Rust."
+repository = "https://github.com/Secure-Your-Soul/FearInit"
+homepage = "https://github.com/Secure-Your-Soul/FearInit"
+readme = "README.md"
+keywords = ["init", "pid1", "boot", "linux", "systems-programming"]
+categories = ["os::unix-apis", "command-line-utilities"]
 
 [[bin]]
 name = "FearInit"
 path = "main.rs"
 
 [dependencies]
-souls = { git = "https://github.com/Secure-Your-Soul/SoulAPI.git", branch = "feat/rust-rewrite", features = ["http"] }
+souls = { git = "https://github.com/Secure-Your-Soul/SoulAPI.git", branch = "feat/rust-rewrite", features = ["default"] }
 #tikv-jemallocator = "0.6" # jemalloc
 tokio = { version = "1", features = ["full"] } # Async
 nix = { version = "0.29", features = ["mount", "process", "sched", "fs", "signal", "user"] }

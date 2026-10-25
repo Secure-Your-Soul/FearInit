@@ -46,6 +46,12 @@ dev-%:
 		export AR_$$T_ENV=$${PREFIX}ar; \
 	fi; \
 	RUSTFLAGS="$$FLAGS" cargo build --target $*
-# Generate docs for project
-docs:
-	cargo doc --open
+test:
+	cargo build --release --target x86_64-unknown-linux-musl
+	podman run --rm -it \
+		--privileged \
+		--pid=private \
+		-v "$(CURDIR)":/app:Z \
+		-w /app \
+		rust:latest \
+		./target/x86_64-unknown-linux-musl/release/FearInit

@@ -1,0 +1,25 @@
+[advisories]
+version = 2
+
+[licenses]
+# Zezwalamy na popularne, bezpieczne licencje open-source
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "BSD-3-Clause",
+    "Unicode-3.0",
+    "Unlicense",
+    "AGPL-3.0-or-later", # Twoja licencja
+    "Zlib",
+    "ISC"
+]
+# Wyłączamy sprawdzanie OSI/FSF, żeby nie było fałszywych alarmów
+confidence-threshold = 0.8
+
+[bans]
+multiple-versions = "warn"
+wildcards = "allow"
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "allow" # Pozwalamy na Twoje zależności z GitHuba (Secure-Your-Soul/SoulAPI)
