@@ -1,6 +1,12 @@
-// Copyright (C) 2026 Denis Rudolf Kontek (Secure Your Soul)
-// SPDX-License-Identifier: AGPL-3.0-or-later OR LicenseRef-Commercial
-// See LICENSE and DUAL-LICENSING.md for licensing details.
+/* 
+
+  Copyright (C) 2026 Denis Rudolf Kontek (Secure Your Soul)
+
+  This file is part of FearInit and is dual-licensed:
+    1. AGPL-3.0-or-later — see LICENSE for the full text.
+    2. Commercial license — see COMMERCIAL.md for details.
+
+*/
 use nix::mount::{MsFlags, mount};
 use nix::sys::wait::{WaitPidFlag, waitpid};
 use std::ffi::OsStr;
