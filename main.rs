@@ -1,16 +1,11 @@
-/*
-* Copyright (C) 2026 Denis Rudolf Kontek (Secure Your Soul)
-* PROPRIETARY AND CONFIDENTIAL / SOURCE-AVAILABLE ONLY.
-* See local LICENSE file for usage restrictions.
-*/
+// Copyright (C) 2026 Denis Rudolf Kontek (Secure Your Soul)
+// SPDX-License-Identifier: AGPL-3.0-or-later OR LicenseRef-Commercial
+// See LICENSE and DUAL-LICENSING.md for licensing details.
 use nix::mount::{MsFlags, mount};
 use nix::sys::wait::{WaitPidFlag, waitpid};
-use secure_api::{server_status, verify_programs};
 use std::ffi::OsStr;
-use nix::unistd::{fork, ForkResult, execvp};
-use std::ffi::CString;
-use std::process;
 use signal_hook::iterator::Signals;
+use sysinfo::System;
 
 fn main() {
     // 1. Montowanie systemów plików
@@ -20,13 +15,6 @@ fn main() {
     
     server_status();
     verify_programs();
-
-    // 2. Start usług
-    if fork_and_exec("/sbin/wayland-compositor") {
-        println!("Kompozytor wystartował pomyślnie.");
-    } else {
-        eprintln!("Błąd uruchomienia procesów tła.");
-    }
 
     // 3. Konfiguracja sygnałów + SIGCHLD (żeby jądro wołało nas, gdy dziecko padnie!)
     let mut signals = Signals::new(&[
@@ -66,40 +54,58 @@ fn main() {
 }
 
 fn mount_fs(source: &str, target: &str, fstype: &str) {
-    mount(
-        Some(source),
-        target,
-        Some(fstype),
+    match mount(
+        Some(source), target, Some(fstype),
         MsFlags::MS_NOSUID | MsFlags::MS_NODEV | MsFlags::MS_NOEXEC,
         None::<&OsStr>,
-    )
-    .expect("Nie udało się zamontować systemu plików");
+    ) {
+        Ok(()) => {}
+        Err(nix::errno::Errno::EBUSY) => {} // już zamontowane
+        Err(e) => eprintln!("mount {} -> {}: {}", source, target, e),
+    }
 }
 
-fn fork_and_exec(path: &str) -> bool {
-    match unsafe { fork() } {
-        Ok(ForkResult::Child) => {
-            let c_path = match CString::new(path) {
-                Ok(p) => p,
-                Err(_) => process::exit(1),
-            };
-            let args = [c_path.clone()];
-            match execvp(&c_path, &args) {
-                Ok(_) => unreachable!(),  // exec nie wraca przy sukcesie
-                Err(e) => {
-                    eprintln!("execvp({}) failed: {}", path, e);
-                    process::exit(1);
-                }
-            }
-            process::exit(1);
-        }
-        Ok(ForkResult::Parent { child }) => {
-            println!("Uruchomiono proces w tle o PID: {}", child);
-            true
-        }
-        Err(e) => {
-            eprintln!("Błąd podczas fork(): {}", e);
-            false
-        }
+fn server_status() {
+    let name: &str = "FearInit";
+    const VERSION: &str = env!("CARGO_PKG_VERSION");
+
+    // Pobieranie PID aktualnego procesu
+    let current_pid = std::process::id();
+
+    println!("[{}] Starting (v{})", name, VERSION);
+
+    // Inicjalizacja informacji systemowych przez sysinfo
+    let mut sys = System::new_all();
+    sys.refresh_all();
+
+    // Informacje o systemie i procesorze
+    let os_name = System::name().unwrap_or_else(|| "Unknown OS".to_string());
+    let os_version = System::os_version().unwrap_or_else(|| "Unknown version".to_string());
+    let kernel_version = System::kernel_version().unwrap_or_else(|| "Unknown kernel".to_string());
+    let host_name = System::host_name().unwrap_or_else(|| "Unknown host".to_string());
+    let cpu_brand = sys
+        .cpus()
+        .first()
+        .map(|cpu| cpu.brand())
+        .unwrap_or("Unknown CPU");
+    let total_memory = sys.total_memory() / 1024 / 1024; // w MB
+
+    println!("--------------------------------------------------");
+    println!("[System Info]");
+    println!(" * Hostname:      {}", host_name);
+    println!(" * OS:            {} ({})", os_name, os_version);
+    println!(" * Kernel:        {}", kernel_version);
+    println!(" * CPU:           {}", cpu_brand);
+    println!(" * Total RAM:     {} MB", total_memory);
+    println!(" * PID procesu:   {}", current_pid);
+    println!("--------------------------------------------------");
+
+    println!("[{}] Loaded.", name);
+}
+fn verify_programs() {
+    println!("Veryfing Programs...");
+    if "Program" == "sign" {
+        println!("Verify Error");
     }
+    println!("Verify Done");
 }
