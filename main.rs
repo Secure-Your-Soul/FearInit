@@ -16,6 +16,7 @@ use sysinfo::System;
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 1. Montowanie systemów plików
+    mount_fs("devtmpfs", "/dev", "devtmpfs");
     mount_fs("proc", "/proc", "proc");
     mount_fs("sysfs", "/sys", "sysfs");
 
