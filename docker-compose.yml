@@ -1,0 +1,21 @@
+services:
+  builder:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        HOST_UID: ${UID:-1000}
+        HOST_GID: ${GID:-1000}
+    image: fearinit:latest
+    user: "${UID:-1000}:${GID:-1000}"
+    volumes:
+      - .:/build
+    working_dir: /build
+    command: ["make"]
+
+  test:
+    extends: builder
+    profiles: ["test"]
+    user: "0:0" 
+    privileged: true
+    command: ["sh", "-c", "cargo build --release && exec ./target/x86_64-unknown-linux-musl/release/FearInit"]
