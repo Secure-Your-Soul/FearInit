@@ -18,7 +18,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 1. Montowanie systemów plików
     mount_fs("proc", "/proc", "proc");
     mount_fs("sysfs", "/sys", "sysfs");
-    mount_fs("devtmpfs", "/dev", "devtmpfs");
 
     server_status();
     verify_programs();
