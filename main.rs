@@ -13,10 +13,36 @@ use nix::sys::wait::{WaitPidFlag, waitpid};
 use signal_hook::iterator::Signals;
 use std::ffi::OsStr;
 use sysinfo::System;
+
+// NOWE IMPORTY DLA KONSOLI:
+use nix::fcntl::{open, OFlag};
+use nix::sys::stat::Mode;
+use nix::unistd::{close, dup2};
+
 const VERSION: &str = env!("CARGO_PKG_VERSION");
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // 1. Montowanie systemów plików
-    mount_fs("devtmpfs", "/dev", "devtmpfs");
+    // 1. Montowanie /dev (BEZ flagi MS_NODEV!)
+    match mount(
+        Some("devtmpfs"),
+        "/dev",
+        Some("devtmpfs"),
+        MsFlags::MS_NOSUID | MsFlags::MS_NOEXEC, // Tylko NOSUID i NOEXEC
+        None::<&OsStr>,
+    ) {
+        Ok(()) | Err(nix::errno::Errno::EBUSY) => {} 
+        Err(e) => eprintln!("mount devtmpfs -> /dev: {e}"),
+    }
+
+    // 2. Podłączenie konsoli do stdin (0), stdout (1), stderr (2)
+    if let Ok(fd) = open("/dev/console", OFlag::O_RDWR, Mode::empty()) {
+        let _ = dup2(fd, 0);
+        let _ = dup2(fd, 1);
+        let _ = dup2(fd, 2);
+        let _ = close(fd); // Zamykamy oryginalny deskryptor, bo mamy już duplikaty
+    }
+
+    // 3. Montowanie reszty
     mount_fs("proc", "/proc", "proc");
     mount_fs("sysfs", "/sys", "sysfs");
 
