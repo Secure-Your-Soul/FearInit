@@ -104,13 +104,11 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2.1.1
 
-  tag:
+  check:
     needs: [fmt, clippy, tests, coverage, audit, docs, deny]
     if: github.event_name == 'push' && github.ref == 'refs/heads/stable'
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    permissions:
-      contents: write
     outputs:
       version: ${{ steps.ver.outputs.version }}
       is_new: ${{ steps.check.outputs.is_new }}
@@ -118,27 +116,27 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-      - id: ver
+      
+      - name: Get Version
+        id: ver
         run: |
           V=$(grep -m1 '^version' Cargo.toml | sed -E 's/.*"([^"]+)".*/\1/')
           echo "version=$V" >> "$GITHUB_OUTPUT"
-      - id: check
+          
+      - name: Check if tag exists
+        id: check
         run: |
           if git rev-parse "v${{ steps.ver.outputs.version }}" >/dev/null 2>&1; then
             echo "is_new=false" >> $GITHUB_OUTPUT
+            echo "Tag v${{ steps.ver.outputs.version }} already exists. Skipping build and release."
           else
             echo "is_new=true" >> $GITHUB_OUTPUT
+            echo "New version v${{ steps.ver.outputs.version }} detected. Proceeding with build."
           fi
-      - if: steps.check.outputs.is_new == 'true'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag "v${{ steps.ver.outputs.version }}"
-          git push origin "v${{ steps.ver.outputs.version }}"
 
   build:
-    needs: [tag]
-    if: needs.tag.outputs.is_new == 'true'
+    needs: [check]
+    if: needs.check.outputs.is_new == 'true'
     continue-on-error: ${{ matrix.experimental == true }}
     permissions:
       contents: read
@@ -161,11 +159,10 @@ jobs:
       - uses: dtolnay/rust-toolchain@a2627de80e5819949c7e1c83ed99b29085fc9bc4 # v1.98.1
         with:
           targets: ${{ matrix.target }}
-          
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           key: ${{ matrix.target }}
-
+      
       - name: Build
         run: cargo build --release --all-features --target ${{ matrix.target }} --locked
         
@@ -179,18 +176,29 @@ jobs:
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: FearInit-${{ matrix.target }}
+          name: FearInit-${{ matrix.name }}
           path: ${{ env.artifact_path }}
           retention-days: 7
 
   release:
-    needs: [tag, build]
-    if: needs.tag.outputs.is_new == 'true'
+    needs: [check, build]
+    if: needs.check.outputs.is_new == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          
+      - name: Create Tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag "v${{ needs.check.outputs.version }}"
+          git push origin "v${{ needs.check.outputs.version }}"
+
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           path: artifacts
@@ -199,8 +207,8 @@ jobs:
       - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          tag_name: v${{ needs.tag.outputs.version }}
+          tag_name: v${{ needs.check.outputs.version }}
           files: |
             artifacts/**
           generate_release_notes: true
-          prerelease: ${{ contains(needs.tag.outputs.version, '-') }}
+          prerelease: ${{ contains(needs.check.outputs.version, '-') }}
