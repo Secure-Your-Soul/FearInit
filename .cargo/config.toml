@@ -1,22 +1,51 @@
+#  Copyright (C) 2026 Denis Rudolf Kontek (Secure Your Soul)
+
+#  This file is part of FearInit and is dual-licensed:
+#    1. AGPL-3.0-or-later — see LICENSE for the full text.
+#    2. Commercial license — see COMMERCIAL.md for details.
+
 [build]
 target = "x86_64-unknown-linux-musl"
-# Jamy zapis dla każdej architektury MUSL z osobna:
-[target.x86_64-unknown-linux-musl]
-rustflags = ["-C", "link-arg=-lgcc_eh"]
 
-[target.aarch64-unknown-linux-musl]
-rustflags = ["-C", "link-arg=-lgcc_eh"]
+# ==========================================
+# 1. LINUX (MUSL) - for initramfs and ISO
+# ==========================================
+[target.'cfg(all(target_os = "linux", target_env = "musl"))']
+linker = "rust-lld"
+rustflags = [
+    "-C", "target-feature=+crt-static",
+    "-C", "link-self-contained=yes",
+    "-C", "relocation-model=pie",
+]
 
-[target.riscv64gc-unknown-linux-musl]
-rustflags = ["-C", "link-arg=-lgcc_eh"]
-
-# Pozostałe ustawienia dla GNU (bez zmian)
-[target.aarch64-unknown-linux-gnu]
-linker = "aarch64-linux-gnu-gcc"
-
-[target.riscv64gc-unknown-linux-gnu]
-linker = "riscv64-linux-gnu-gcc"
-
-# NONE
+# ==========================================
+# 2. BARE-METAL (NONE) - common to all
+# ==========================================
 [target.'cfg(target_os = "none")']
-rustflags = ["-C", "link-arg=-nostartfiles"]
+linker = "rust-lld" # Default, but good to have explicitly
+rustflags = [
+    "-C", "link-arg=-nostartfiles",
+    "-C", "panic=abort", 
+]
+
+# ==========================================
+# 3. BARE-METAL - linker scripts for architectures
+# ==========================================
+# Cargo will automatically merge these flags with the "none" section above!
+[target.x86_64-unknown-none]
+rustflags = [
+#    "-C", "link-arg=-Tlinker-x86_64.ld",
+    "-C", "relocation-model=static",
+]
+
+[target.aarch64-unknown-none]
+rustflags = [
+#    "-C", "link-arg=-Tlinker-aarch64.ld",
+    "-C", "relocation-model=static",
+]
+
+[target.riscv64gc-unknown-none-elf]
+rustflags = [
+#    "-C", "link-arg=-Tlinker-riscv64.ld",
+    "-C", "relocation-model=static",
+]
