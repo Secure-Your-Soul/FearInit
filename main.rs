@@ -15,7 +15,7 @@ use std::ffi::OsStr;
 use sysinfo::System;
 
 // NOWE IMPORTY DLA KONSOLI:
-use nix::fcntl::{open, OFlag};
+use nix::fcntl::{OFlag, open};
 use nix::sys::stat::Mode;
 use nix::unistd::{close, dup2};
 
@@ -23,6 +23,7 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 1. Montowanie /dev (BEZ flagi MS_NODEV!)
+
     match mount(
         Some("devtmpfs"),
         "/dev",
@@ -30,7 +31,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         MsFlags::MS_NOSUID | MsFlags::MS_NOEXEC, // Tylko NOSUID i NOEXEC
         None::<&OsStr>,
     ) {
-        Ok(()) | Err(nix::errno::Errno::EBUSY) => {} 
+        Ok(()) | Err(nix::errno::Errno::EBUSY) => {}
         Err(e) => eprintln!("mount devtmpfs -> /dev: {e}"),
     }
 

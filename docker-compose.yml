@@ -18,4 +18,7 @@ services:
     profiles: ["test"]
     user: "0:0" 
     privileged: true
-    command: ["sh", "-c", "cargo build --release && exec ./target/x86_64-unknown-linux-musl/release/FearInit"]
+    volumes:
+      - .:/build
+      - /boot:/boot:ro
+    command: ["sh", "-c", "make test-qemu"]

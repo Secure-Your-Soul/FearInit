@@ -4,6 +4,8 @@ ARG HOST_GID=1000
 RUN apt-get update && apt-get install -y --no-install-recommends \
     # Build Project
     make \
+    # Test QEMU
+    curl qemu-system-x86 ovmf cpio \
     && rm -rf /var/lib/apt/lists/*
 RUN rustup target add \
     # Musl
