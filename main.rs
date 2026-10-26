@@ -23,7 +23,7 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 1. Montowanie /dev (BEZ flagi MS_NODEV!)
-    
+
     match mount(
         Some("devtmpfs"),
         "/dev",
