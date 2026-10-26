@@ -6,7 +6,7 @@
 
 [package]
 name = "FearInit"
-version = "0.1.3"
+version = "0.1.2"
 edition = "2024"
 rust-version = "1.98.1"
 license = "AGPL-3.0-or-later"
