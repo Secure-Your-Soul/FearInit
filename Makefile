@@ -36,3 +36,29 @@ docker:
 
 test:
 	docker compose run --rm test
+
+test-qemu:
+	@echo "🔨 Building FearInit..."
+	cargo build --release --target x86_64-unknown-linux-musl
+	@echo "📦 Creating initramfs..."
+	rm -rf .tmp-initramfs
+	bash -c "mkdir -p .tmp-initramfs/{bin,dev,proc,sys}"
+	cp target/x86_64-unknown-linux-musl/release/FearInit .tmp-initramfs/init
+	chmod +x .tmp-initramfs/init
+	mknod -m 600 .tmp-initramfs/dev/console c 5 1 || true
+	mknod -m 666 .tmp-initramfs/dev/null c 1 3 || true
+	cd .tmp-initramfs && find . -print0 | cpio --null -ov --format=newc | gzip -9 > ../initramfs.cpio.gz
+	@echo "⬇️  Downloading Alpine kernel..."
+	# Pobieramy gotowe jądro Alpine (vmlinuz-lts)
+	curl -L -o vmlinuz-lts https://dl-cdn.alpinelinux.org/alpine/latest-stable/releases/x86_64/netboot/vmlinuz-lts
+	@echo "🚀 Starting QEMU..."
+	@rm -rf .tmp-initramfs
+	qemu-system-x86_64 \
+		-enable-kvm \
+		-m 2048 \
+		-nographic \
+		-kernel vmlinuz-lts \
+		-initrd initramfs.cpio.gz \
+		-append "console=ttyS0"
+	@rm initramfs.cpio.gz
+	@rm vmlinuz-lts
