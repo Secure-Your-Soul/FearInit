@@ -282,22 +282,22 @@ jobs:
         shell: bash
         run: |
           set -e
-          NEW_NAME="FearInit-${{ matrix.name }}"
           
           if [ "${{ matrix.profile }}" = "dev" ]; then
-            NEW_NAME="${NEW_NAME}-dev"
-            BIN_PATH="target/${{ matrix.target }}/debug/FearInit"
+            NEW_NAME="FearInit-${{ matrix.name }}-dev"
           else
-            BIN_PATH="target/${{ matrix.target }}/release/FearInit"
+            NEW_NAME="FearInit-${{ matrix.name }}"
           fi
           
-          mv "$BIN_PATH" "$NEW_NAME"
-          echo "artifact_path=$NEW_NAME" >> $GITHUB_ENV
+          BIN_PATH="target/${{ matrix.target }}/release/FearInit"
+          
+          cp "$BIN_PATH" "$NEW_NAME"
+          echo "BUILT_FILE=$NEW_NAME" >> $GITHUB_ENV
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: FearInit-${{ matrix.name }}-${{ matrix.profile }}
-          path: ${{ env.artifact_path }}
+          path: ${{ env.BUILT_FILE }}
           retention-days: 7
 
   release:
