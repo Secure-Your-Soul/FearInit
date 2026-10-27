@@ -47,7 +47,7 @@ debug = 2 # -C debuginfo=2
 opt-level = 0    # Max Compression
 lto = false     # Link Time Optimization
 codegen-units = 16  # One big block of code (Better compresion)
-panic = 'unwind'    # Deleting Panic Code Resolver (Binary is smaller)
+panic = 'abort'    # Deleting Panic Code Resolver (Binary is smaller)
 strip = false       # Deleting symbols
 overflow-checks = true # Turning off overflows when FALSE (More fast but dangerous)
 incremental = true # Always LTO

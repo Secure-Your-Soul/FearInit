@@ -283,14 +283,12 @@ jobs:
         run: |
           set -e
           
-          # Ustalamy nazwę docelową
           if [ "${{ matrix.profile }}" = "dev" ]; then
             NEW_NAME="FearInit-${{ matrix.name }}-dev"
           else
             NEW_NAME="FearInit-${{ matrix.name }}"
           fi
           
-          # Zawsze bierzemy ze ścieżki release, bo budujesz z flagą --release dla obu!
           BIN_PATH="target/${{ matrix.target }}/release/FearInit"
           
           cp "$BIN_PATH" "$NEW_NAME"
