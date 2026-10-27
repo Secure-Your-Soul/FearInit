@@ -144,9 +144,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # --- x86_64 ---
+        # --- x86_64 ---
           - target: x86_64-unknown-linux-musl
-            cpu: x86-64-v1
+            cpu: x86-64
             name: x86_64-v1
           - target: x86_64-unknown-linux-musl
             cpu: x86-64-v2
@@ -158,7 +158,7 @@ jobs:
             cpu: x86-64-v4
             name: x86_64-v4
             
-          # --- aarch64 ---
+        # --- aarch64 ---
           - target: aarch64-unknown-linux-musl
             cpu: generic
             name: aarch64
@@ -240,7 +240,7 @@ jobs:
             name: aarch64-apple-m1
             experimental: true
 
-          # --- riscv64 ---
+        # --- riscv64 ---
           - target: riscv64gc-unknown-linux-musl
             cpu: generic
             name: riscv64
@@ -252,10 +252,6 @@ jobs:
           - target: riscv64gc-unknown-linux-musl
             cpu: sifive-u74
             name: riscv64-sifive-u74
-            experimental: true
-          - target: riscv64gc-unknown-linux-musl
-            cpu: thead-c906
-            name: riscv64-thead-c906
             experimental: true
     runs-on: ubuntu-latest
     timeout-minutes: 30
