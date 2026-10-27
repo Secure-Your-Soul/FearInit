@@ -144,13 +144,118 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # --- x86_64 ---
           - target: x86_64-unknown-linux-musl
-            name: x86_64
+            cpu: x86-64-v1
+            name: x86_64-v1
+          - target: x86_64-unknown-linux-musl
+            cpu: x86-64-v2
+            name: x86_64-v2
+          - target: x86_64-unknown-linux-musl
+            cpu: x86-64-v3
+            name: x86_64-v3
+          - target: x86_64-unknown-linux-musl
+            cpu: x86-64-v4
+            name: x86_64-v4
+            
+          # --- aarch64 ---
           - target: aarch64-unknown-linux-musl
+            cpu: generic
             name: aarch64
             experimental: true
+          - target: aarch64-unknown-linux-musl
+            cpu: cortex-a34
+            name: aarch64-cortex-a34
+            experimental: true
+          - target: aarch64-unknown-linux-musl
+            cpu: cortex-a35
+            name: aarch64-cortex-a35
+            experimental: true
+          - target: aarch64-unknown-linux-musl
+            cpu: cortex-a53
+            name: aarch64-cortex-a53
+            experimental: true
+          - target: aarch64-unknown-linux-musl
+            cpu: cortex-a55
+            name: aarch64-cortex-a55
+            experimental: true
+          - target: aarch64-unknown-linux-musl
+            cpu: cortex-a57
+            name: aarch64-cortex-a57
+            experimental: true
+          - target: aarch64-unknown-linux-musl
+            cpu: cortex-a72
+            name: aarch64-cortex-a72
+            experimental: true
+          - target: aarch64-unknown-linux-musl
+            cpu: cortex-a73
+            name: aarch64-cortex-a73
+            experimental: true
+          - target: aarch64-unknown-linux-musl
+            cpu: cortex-a75
+            name: aarch64-cortex-a75
+            experimental: true
+          - target: aarch64-unknown-linux-musl
+            cpu: cortex-a76
+            name: aarch64-cortex-a76
+            experimental: true
+          - target: aarch64-unknown-linux-musl
+            cpu: cortex-a510
+            name: aarch64-cortex-a510
+            experimental: true
+          - target: aarch64-unknown-linux-musl
+            cpu: cortex-a710
+            name: aarch64-cortex-a710
+            experimental: true
+          - target: aarch64-unknown-linux-musl
+            cpu: cortex-a715
+            name: aarch64-cortex-a715
+            experimental: true
+          - target: aarch64-unknown-linux-musl
+            cpu: cortex-x1
+            name: aarch64-cortex-x1
+            experimental: true
+          - target: aarch64-unknown-linux-musl
+            cpu: cortex-x2
+            name: aarch64-cortex-x2
+            experimental: true
+          - target: aarch64-unknown-linux-musl
+            cpu: neoverse-n1
+            name: aarch64-neoverse-n1
+            experimental: true
+          - target: aarch64-unknown-linux-musl
+            cpu: neoverse-n2
+            name: aarch64-neoverse-n2
+            experimental: true
+          - target: aarch64-unknown-linux-musl
+            cpu: neoverse-v1
+            name: aarch64-neoverse-v1
+            experimental: true
+          - target: aarch64-unknown-linux-musl
+            cpu: neoverse-e1
+            name: aarch64-neoverse-e1
+            experimental: true
+          - target: aarch64-unknown-linux-musl
+            cpu: apple-m1
+            name: aarch64-apple-m1
+            experimental: true
+
+          # --- riscv64 ---
           - target: riscv64gc-unknown-linux-musl
+            cpu: generic
             name: riscv64
+            experimental: true
+          - target: riscv64gc-unknown-linux-musl
+            cpu: sifive-u54
+            name: riscv64-sifive-u54
+            experimental: true
+          - target: riscv64gc-unknown-linux-musl
+            cpu: sifive-u74
+            name: riscv64-sifive-u74
+            experimental: true
+          - target: riscv64gc-unknown-linux-musl
+            cpu: thead-c906
+            name: riscv64-thead-c906
             experimental: true
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -161,11 +266,16 @@ jobs:
           targets: ${{ matrix.target }}
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
-          key: ${{ matrix.target }}
+          key: ${{ matrix.target }}-${{ matrix.cpu }}
       
+      - name: Set Target CPU in config
+        shell: bash
+        run: |
+          sed -i 's/target-cpu=native/target-cpu=${{ matrix.cpu }}/g' .cargo/config.toml
+
       - name: Build
         run: cargo build --release --all-features --target ${{ matrix.target }} --locked
-        
+
       - name: Rename and Upload
         shell: bash
         run: |

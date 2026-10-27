@@ -13,9 +13,28 @@ target = "x86_64-unknown-linux-musl"
 [target.'cfg(all(target_os = "linux", target_env = "musl"))']
 linker = "rust-lld"
 rustflags = [
-    "-C", "target-feature=+crt-static",
-    "-C", "link-self-contained=yes",
-    "-C", "relocation-model=pie",
+    # --- HARDWARE / SPEED ---
+    "-C", "target-cpu=native",                          # Optimize code generation for the host CPU architecture
+    
+    # --- SECURITY (HARDENING) ---
+    "-C", "target-feature=+crt-static",                 # Statically embed the musl C runtime
+    "-C", "relocation-model=pie",                       # Enable Position Independent Executable layout
+    #"-C", "stack-protector=strong",                    # Insert stack canaries to detect buffer overflows | dont workig maybe is in nightly so we must wait to stable
+    "-C", "link-arg=-z", "-C", "link-arg=now",          # Force immediate symbol binding (disable lazy binding)
+    "-C", "link-arg=-z", "-C", "link-arg=relro",        # Mark Global Offset Table as read-only (Full RELRO)
+    "-C", "link-arg=-z", "-C", "link-arg=defs",         # Zero tolerance for any unresolved symbols during linking
+    
+    # --- LINKER & SIZE OPTIMIZATIONS ---
+    "-C", "link-self-contained=yes",                    # Use self-contained linking artifacts for toolchain consistency
+    "-C", "link-arg=-Bstatic",                          # Prefer static libraries over dynamic ones
+    "-C", "link-arg=-z", "-C", "link-arg=notext",       # Allow text relocations required by static PIE bootstrap
+    "-C", "link-arg=--no-dynamic-linker",               # Omit the dynamic interpreter path (pure standalone binary)
+    "-C", "link-arg=--as-needed",                       # Drop unreferenced shared libraries from the link stage
+    "-C", "link-arg=-s",                                # Strip remaining symbols directly at the linker level
+    "-C", "symbol-mangling-version=v0",                 # Use modern v0 symbol mangling for better compression
+    "-C", "link-arg=--gc-sections",                     # Garbage collect unused code and data sections
+    "-C", "link-arg=-O3",                               # Maximum optimization level for the linker itself
+    "-C", "link-arg=--build-id=none",                   # Remove Build-ID for smaller size and hardened footprint
 ]
 
 # ==========================================
