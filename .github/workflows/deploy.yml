@@ -275,6 +275,7 @@ jobs:
       - name: Rename and Upload
         shell: bash
         run: |
+          set -e
           NEW_NAME="FearInit-${{ matrix.name }}"
           BIN_PATH="target/${{ matrix.target }}/release/FearInit"
           mv "$BIN_PATH" "$NEW_NAME"
