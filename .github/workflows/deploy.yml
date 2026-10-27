@@ -147,7 +147,7 @@ jobs:
         # --- x86_64 ---
           - target: x86_64-unknown-linux-musl
             cpu: x86-64
-            name: x86_64-v1
+            name: x86_64
           - target: x86_64-unknown-linux-musl
             cpu: x86-64-v2
             name: x86_64-v2
@@ -299,7 +299,7 @@ jobs:
         # --- x86_64 ---
           - target: x86_64-unknown-linux-musl
             cpu: x86-64
-            name: x86_64-v1
+            name: x86_64
           - target: x86_64-unknown-linux-musl
             cpu: x86-64-v2
             name: x86_64-v2
