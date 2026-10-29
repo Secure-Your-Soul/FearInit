@@ -1,3 +1,9 @@
+#  Copyright (C) 2026 Denis Rudolf Kontek (Secure Your Soul)
+
+#  This file is part of FearInit and is dual-licensed:
+#    1. AGPL-3.0-or-later — see LICENSE for the full text.
+#    2. Commercial license — see COMMERCIAL.md for details.
+
 name: CI/CD
 
 on:
@@ -285,159 +291,7 @@ jobs:
           name: FearInit-${{ matrix.name }}
           path: ${{ env.artifact_path }}
           retention-days: 7
- 
-  build_dev:
-    needs: [check]
-    if: needs.check.outputs.is_new == 'true'
-    continue-on-error: ${{ matrix.experimental == true }}
-    permissions:
-      contents: read
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-        # --- x86_64 ---
-          - target: x86_64-unknown-linux-musl
-            cpu: x86-64
-            name: x86_64
-          - target: x86_64-unknown-linux-musl
-            cpu: x86-64-v2
-            name: x86_64-v2
-          - target: x86_64-unknown-linux-musl
-            cpu: x86-64-v3
-            name: x86_64-v3
-          - target: x86_64-unknown-linux-musl
-            cpu: x86-64-v4
-            name: x86_64-v4
-            
-        # --- aarch64 ---
-          - target: aarch64-unknown-linux-musl
-            cpu: generic
-            name: aarch64
-            experimental: true
-          - target: aarch64-unknown-linux-musl
-            cpu: cortex-a34
-            name: aarch64-cortex-a34
-            experimental: true
-          - target: aarch64-unknown-linux-musl
-            cpu: cortex-a35
-            name: aarch64-cortex-a35
-            experimental: true
-          - target: aarch64-unknown-linux-musl
-            cpu: cortex-a53
-            name: aarch64-cortex-a53
-            experimental: true
-          - target: aarch64-unknown-linux-musl
-            cpu: cortex-a55
-            name: aarch64-cortex-a55
-            experimental: true
-          - target: aarch64-unknown-linux-musl
-            cpu: cortex-a57
-            name: aarch64-cortex-a57
-            experimental: true
-          - target: aarch64-unknown-linux-musl
-            cpu: cortex-a72
-            name: aarch64-cortex-a72
-            experimental: true
-          - target: aarch64-unknown-linux-musl
-            cpu: cortex-a73
-            name: aarch64-cortex-a73
-            experimental: true
-          - target: aarch64-unknown-linux-musl
-            cpu: cortex-a75
-            name: aarch64-cortex-a75
-            experimental: true
-          - target: aarch64-unknown-linux-musl
-            cpu: cortex-a76
-            name: aarch64-cortex-a76
-            experimental: true
-          - target: aarch64-unknown-linux-musl
-            cpu: cortex-a510
-            name: aarch64-cortex-a510
-            experimental: true
-          - target: aarch64-unknown-linux-musl
-            cpu: cortex-a710
-            name: aarch64-cortex-a710
-            experimental: true
-          - target: aarch64-unknown-linux-musl
-            cpu: cortex-a715
-            name: aarch64-cortex-a715
-            experimental: true
-          - target: aarch64-unknown-linux-musl
-            cpu: cortex-x1
-            name: aarch64-cortex-x1
-            experimental: true
-          - target: aarch64-unknown-linux-musl
-            cpu: cortex-x2
-            name: aarch64-cortex-x2
-            experimental: true
-          - target: aarch64-unknown-linux-musl
-            cpu: neoverse-n1
-            name: aarch64-neoverse-n1
-            experimental: true
-          - target: aarch64-unknown-linux-musl
-            cpu: neoverse-n2
-            name: aarch64-neoverse-n2
-            experimental: true
-          - target: aarch64-unknown-linux-musl
-            cpu: neoverse-v1
-            name: aarch64-neoverse-v1
-            experimental: true
-          - target: aarch64-unknown-linux-musl
-            cpu: neoverse-e1
-            name: aarch64-neoverse-e1
-            experimental: true
-          - target: aarch64-unknown-linux-musl
-            cpu: apple-m1
-            name: aarch64-apple-m1
-            experimental: true
-
-        # --- riscv64 ---
-          - target: riscv64gc-unknown-linux-musl
-            cpu: generic
-            name: riscv64
-            experimental: true
-          - target: riscv64gc-unknown-linux-musl
-            cpu: sifive-u54
-            name: riscv64-sifive-u54
-            experimental: true
-          - target: riscv64gc-unknown-linux-musl
-            cpu: sifive-u74
-            name: riscv64-sifive-u74
-            experimental: true
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: dtolnay/rust-toolchain@a2627de80e5819949c7e1c83ed99b29085fc9bc4 # v1.98.1
-        with:
-          targets: ${{ matrix.target }}
-      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
-        with:
-          key: ${{ matrix.target }}-${{ matrix.cpu }}-dev
-      
-      - name: Set Target CPU in config
-        shell: bash
-        run: |
-          sed -i 's/target-cpu=native/target-cpu=${{ matrix.cpu }}/g' .cargo/config.toml
-
-      - name: Build
-        run: cargo build --all-features --target ${{ matrix.target }} --locked
-
-      - name: Rename and Upload
-        shell: bash
-        run: |
-          NEW_NAME="FearInit-${{ matrix.name }}-dev"
-          BIN_PATH="target/${{ matrix.target }}/debug/FearInit"
-          mv "$BIN_PATH" "$NEW_NAME"
-          echo "artifact_path=$NEW_NAME" >> $GITHUB_ENV
-
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: FearInit-${{ matrix.name }}-dev
-          path: ${{ env.artifact_path }}
-          retention-days: 7
-
+          
   release:
     needs: [check, build, build_dev]
     if: needs.check.outputs.is_new == 'true'

@@ -2,7 +2,6 @@
 version = 2
 
 [licenses]
-# Zezwalamy na popularne, bezpieczne licencje open-source
 allow = [
     "MIT",
     "Apache-2.0",
