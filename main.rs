@@ -8,61 +8,52 @@
 
 */
 #![allow(clippy::multiple_crate_versions)]
+use nix::fcntl::{OFlag, open};
 use nix::mount::{MsFlags, mount};
+use nix::sys::stat::{Mode, SFlag, makedev, mknod};
 use nix::sys::wait::{WaitPidFlag, waitpid};
+use nix::unistd::{close, dup2};
 use signal_hook::iterator::Signals;
 use std::ffi::OsStr;
 use sysinfo::System;
 
-// NOWE IMPORTY DLA KONSOLI:
-use nix::fcntl::{OFlag, open};
-use nix::sys::stat::Mode;
-use nix::unistd::{close, dup2};
-
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // 1. Montowanie /dev (BEZ flagi MS_NODEV!)
+    // Kernel mount /dev (devtmpfs) with MsFlags::MS_NOSUID | MsFlags::MS_NOEXEC
+    // Creating /dev/console
+    let _ = mknod(
+        "/dev/console",
+        SFlag::S_IFCHR,
+        Mode::from_bits_truncate(0o600),
+        makedev(5, 1),
+    );
 
-    match mount(
-        Some("devtmpfs"),
-        "/dev",
-        Some("devtmpfs"),
-        MsFlags::MS_NOSUID | MsFlags::MS_NOEXEC, // Tylko NOSUID i NOEXEC
-        None::<&OsStr>,
-    ) {
-        Ok(()) | Err(nix::errno::Errno::EBUSY) => {}
-        Err(e) => eprintln!("mount devtmpfs -> /dev: {e}"),
-    }
-
-    // 2. Podłączenie konsoli do stdin (0), stdout (1), stderr (2)
+    // Connect console to stdin (0), stdout (1), stderr (2)
     if let Ok(fd) = open("/dev/console", OFlag::O_RDWR, Mode::empty()) {
         let _ = dup2(fd, 0);
         let _ = dup2(fd, 1);
         let _ = dup2(fd, 2);
-        let _ = close(fd); // Zamykamy oryginalny deskryptor, bo mamy już duplikaty
+        let _ = close(fd);
     }
 
-    // 3. Montowanie reszty
+    // Mount /proc and /sys with MsFlags::MS_NOSUID | MsFlags::MS_NODEV | MsFlags::MS_NOEXEC
     mount_fs("proc", "/proc", "proc");
     mount_fs("sysfs", "/sys", "sysfs");
 
     server_status();
     verify_programs();
 
-    // 3. Konfiguracja sygnałów + SIGCHLD (żeby jądro wołało nas, gdy dziecko padnie!)
+    // Signals Configuration + SIGCHLD (żeby jądro wołało nas, gdy dziecko padnie!)
     let mut signals = Signals::new([
         signal_hook::consts::SIGTERM,
         signal_hook::consts::SIGINT,
         signal_hook::consts::SIGCHLD,
-    ])?; // Wymaga zmiany sygnatury main na -> Result
+    ])?;
 
-    println!("Inicjalizacja zakończona. Przechodzę w tryb oszczędzania energii (nasłuch zdarzeń).");
-
-    // 4. PĘTLA GŁÓWNA (Zdarzeniowa - 0% CPU w spoczynku)
+    // Main loop (0% CPU in rest)
     'outer: loop {
-        // Ta linijka BLOKJE proces. CPU idzie spać w stan głębokiego uśpienia.
-        // Program obudzi się BŁYSKAWICZNIE tylko wtedy, gdy jądro dostarczy sygnał.
+        // Ta linijka BLOKUJE proces. CPU idzie spać w stan głębokiego uśpienia, a program obudzi się tylko wtedy, gdy jądro dostarczy sygnał.
         for signal in signals.wait() {
             match signal {
                 signal_hook::consts::SIGTERM | signal_hook::consts::SIGINT => {
@@ -70,11 +61,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     break 'outer;
                 }
                 signal_hook::consts::SIGCHLD => {
-                    // Proces potomny zakończył się lub zmienił stan - zbieramy zombie
+                    // Taking zombie
                     loop {
                         match waitpid(None, Some(WaitPidFlag::WNOHANG)) {
                             Ok(nix::sys::wait::WaitStatus::StillAlive) | Err(_) => break,
-                            Ok(status) => println!("Zdarzenie procesu: {status:?}"),
+                            Ok(status) => println!("Process Event: {status:?}"),
                         }
                     }
                 }
@@ -83,7 +74,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    println!("System zamknięty bezpiecznie.");
+    println!("System closed safety.");
     Ok(())
 }
 
@@ -103,16 +94,13 @@ fn mount_fs(source: &str, target: &str, fstype: &str) {
 fn server_status() {
     let name: &str = "FearInit";
 
-    // Pobieranie PID aktualnego procesu
     let current_pid = std::process::id();
 
     println!("[{name}] Starting (v{VERSION})");
 
-    // Inicjalizacja informacji systemowych przez sysinfo
     let mut sys = System::new_all();
     sys.refresh_all();
 
-    // Informacje o systemie i procesorze
     let os_name = System::name().unwrap_or_else(|| "Unknown OS".to_string());
     let os_version = System::os_version().unwrap_or_else(|| "Unknown version".to_string());
     let kernel_version = System::kernel_version().unwrap_or_else(|| "Unknown kernel".to_string());
@@ -132,6 +120,7 @@ fn server_status() {
 
     println!("[{name}] Loaded.");
 }
+
 fn verify_programs() {
     println!("Veryfing Programs...");
     if "Program" == "sign" {
