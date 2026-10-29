@@ -293,7 +293,7 @@ jobs:
           retention-days: 7
           
   release:
-    needs: [check, build, build_dev]
+    needs: [check, build]
     if: needs.check.outputs.is_new == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
