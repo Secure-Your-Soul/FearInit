@@ -1,3 +1,9 @@
+# Copyright (C) 2026 Denis Rudolf Kontek (Secure Your Soul)
+#
+# This file is part of FearInit and is dual-licensed:
+#   1. AGPL-3.0-or-later — see LICENSE for the full text.
+#   2. Commercial license — see COMMERCIAL.md for details.
+
 # https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
 
 version: 2
