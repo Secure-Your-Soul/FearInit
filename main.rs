@@ -8,22 +8,27 @@
 
 */
 #![allow(clippy::multiple_crate_versions)]
-use nix::fcntl::{OFlag, open};
-use nix::mount::{MsFlags, mount};
-use nix::sys::stat::{Mode};
-use nix::sys::wait::{WaitPidFlag, waitpid};
-use nix::unistd::{close, dup2};
+use nix::{
+    fcntl::{OFlag, open},
+    mount::{MsFlags, mount},
+    sys::{
+        stat::Mode,
+        wait::{WaitPidFlag, WaitStatus, waitpid},
+    },
+    unistd::{close, dup2},
+};
 use signal_hook::iterator::Signals;
-use std::ffi::OsStr;
-use std::fs;
+use std::{
+    ffi::OsStr,
+    fs::{self, OpenOptions},
+    io::ErrorKind,
+};
 use sysinfo::System;
-use std::fs::OpenOptions;
-use std::io::ErrorKind;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // Kernel mount /dev (devtmpfs) with MsFlags::MS_NOSUID | MsFlags::MS_NOEXEC
+    // Kernel mounts /dev (devtmpfs) with MsFlags::MS_NOSUID | MsFlags::MS_NOEXEC
     // Creating /dev/console
 
     // Connect console to stdin (0), stdout (1), stderr (2)
@@ -37,7 +42,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Mount /proc and /sys with MsFlags::MS_NOSUID | MsFlags::MS_NODEV | MsFlags::MS_NOEXEC
     mount_fs("proc", "/proc", "proc");
     mount_fs("sysfs", "/sys", "sysfs");
-    mount_fs("securityfs", "/sys/kernel/security","securityfs");
+    mount_fs("securityfs", "/sys/kernel/security", "securityfs");
 
     server_status();
     verify_programs();
@@ -46,27 +51,28 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     test_lockdown_disable();
     test_dev_mem();
 
-    // Signals Configuration + SIGCHLD (żeby jądro wołało nas, gdy dziecko padnie!)
+    // Signals configuration + SIGCHLD (so the kernel notifies us when a child dies!)
     let mut signals = Signals::new([
         signal_hook::consts::SIGTERM,
         signal_hook::consts::SIGINT,
         signal_hook::consts::SIGCHLD,
     ])?;
 
-    // Main loop (0% CPU in rest)
+    // Main loop (0% CPU while idle)
     'outer: loop {
-        // Ta linijka BLOKUJE proces. CPU idzie spać w stan głębokiego uśpienia, a program obudzi się tylko wtedy, gdy jądro dostarczy sygnał.
+        // This line BLOCKS the process. The CPU goes into deep sleep, and the program
+        // wakes up only when the kernel delivers a signal.
         for signal in signals.wait() {
             match signal {
                 signal_hook::consts::SIGTERM | signal_hook::consts::SIGINT => {
-                    println!("Otrzymano sygnał zamknięcia. Wyłączam system...");
+                    println!("Received shutdown signal. Shutting down...");
                     break 'outer;
                 }
                 signal_hook::consts::SIGCHLD => {
-                    // Taking zombie
+                    // Reaping zombies
                     loop {
                         match waitpid(None, Some(WaitPidFlag::WNOHANG)) {
-                            Ok(nix::sys::wait::WaitStatus::StillAlive) | Err(_) => break,
+                            Ok(WaitStatus::StillAlive) | Err(_) => break,
                             Ok(status) => println!("Process Event: {status:?}"),
                         }
                     }
@@ -76,7 +82,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    println!("System closed safety.");
+    println!("System closed safely.");
     Ok(())
 }
 
@@ -88,7 +94,7 @@ fn mount_fs(source: &str, target: &str, fstype: &str) {
         MsFlags::MS_NOSUID | MsFlags::MS_NODEV | MsFlags::MS_NOEXEC,
         None::<&OsStr>,
     ) {
-        Ok(()) | Err(nix::errno::Errno::EBUSY) => {} // if is mounted
+        Ok(()) | Err(nix::errno::Errno::EBUSY) => {} // already mounted
         Err(e) => eprintln!("mount {source} -> {target}: {e}"),
     }
 }
@@ -108,7 +114,7 @@ fn server_status() {
     let kernel_version = System::kernel_version().unwrap_or_else(|| "Unknown kernel".to_string());
     let host_name = System::host_name().unwrap_or_else(|| "Unknown host".to_string());
     let cpu_brand = sys.cpus().first().map_or("Unknown CPU", |cpu| cpu.brand());
-    let total_memory = sys.total_memory() / 1024 / 1024; // w MB
+    let total_memory = sys.total_memory() / 1024 / 1024; // in MB
 
     println!("--------------------------------------------------");
     println!("[System Info]");
@@ -117,14 +123,14 @@ fn server_status() {
     println!(" * Kernel:        {kernel_version}");
     println!(" * CPU:           {cpu_brand}");
     println!(" * Total RAM:     {total_memory} MB");
-    println!(" * PID procesu:   {current_pid}");
+    println!(" * PID:           {current_pid}");
     println!("--------------------------------------------------");
 
     println!("[{name}] Loaded.");
 }
 
 fn verify_programs() {
-    println!("Veryfing Programs...");
+    println!("Verifying programs...");
     if "Program" == "sign" {
         println!("Verify Error");
     }
@@ -134,21 +140,21 @@ fn verify_programs() {
 fn test_lockdown_disable() {
     let path = "/sys/kernel/security/lockdown";
     match fs::write(path, "none") {
-        Ok(_) => println!("[!] UWAGA: Udało się wyłączyć Lockdown (nie powinno się zdarzyć!)"),
+        Ok(..) => println!("[!] WARNING: Successfully disabled Lockdown (this should not happen!)"),
         Err(e) if e.kind() == std::io::ErrorKind::PermissionDenied => {
-            println!("[+] Lockdown jest wymuszony – nie można go wyłączyć (nawet jako root).");
+            println!("[+] Lockdown is enforced – cannot be disabled (even as root).");
         }
-        Err(e) => println!("[?] Błąd zapisu do {}: {}", path, e),
+        Err(e) => println!("[?] Error writing to {path}: {e}"),
     }
 }
 
 fn test_dev_mem() {
     let path = "/dev/mem";
     match OpenOptions::new().read(true).open(path) {
-        Ok(_) => println!("[!] UWAGA: Udało się otworzyć /dev/mem (Lockdown nie działa!)"),
+        Ok(_) => println!("[!] WARNING: Successfully opened /dev/mem (Lockdown is not working!)"),
         Err(e) if e.kind() == ErrorKind::PermissionDenied => {
-            println!("[+] /dev/mem: dostęp zablokowany przez Lockdown (EPERM).");
+            println!("[+] /dev/mem: access blocked by Lockdown (EPERM).");
         }
-        Err(e) => println!("[?] Błąd otwarcia /dev/mem: {:?}", e.kind()),
+        Err(e) => println!("[?] Error opening /dev/mem: {:?}", e.kind()),
     }
 }
