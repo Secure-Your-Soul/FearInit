@@ -10,24 +10,21 @@
 #![allow(clippy::multiple_crate_versions)]
 use nix::fcntl::{OFlag, open};
 use nix::mount::{MsFlags, mount};
-use nix::sys::stat::{Mode, SFlag, makedev, mknod};
+use nix::sys::stat::{Mode};
 use nix::sys::wait::{WaitPidFlag, waitpid};
 use nix::unistd::{close, dup2};
 use signal_hook::iterator::Signals;
 use std::ffi::OsStr;
+use std::fs;
 use sysinfo::System;
+use std::fs::OpenOptions;
+use std::io::ErrorKind;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Kernel mount /dev (devtmpfs) with MsFlags::MS_NOSUID | MsFlags::MS_NOEXEC
     // Creating /dev/console
-    let _ = mknod(
-        "/dev/console",
-        SFlag::S_IFCHR,
-        Mode::from_bits_truncate(0o600),
-        makedev(5, 1),
-    );
 
     // Connect console to stdin (0), stdout (1), stderr (2)
     if let Ok(fd) = open("/dev/console", OFlag::O_RDWR, Mode::empty()) {
@@ -40,9 +37,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Mount /proc and /sys with MsFlags::MS_NOSUID | MsFlags::MS_NODEV | MsFlags::MS_NOEXEC
     mount_fs("proc", "/proc", "proc");
     mount_fs("sysfs", "/sys", "sysfs");
+    mount_fs("securityfs", "/sys/kernel/security","securityfs");
 
     server_status();
     verify_programs();
+
+    // Security Tests
+    test_lockdown_disable();
+    test_dev_mem();
 
     // Signals Configuration + SIGCHLD (żeby jądro wołało nas, gdy dziecko padnie!)
     let mut signals = Signals::new([
@@ -127,4 +129,26 @@ fn verify_programs() {
         println!("Verify Error");
     }
     println!("Verify Done");
+}
+
+fn test_lockdown_disable() {
+    let path = "/sys/kernel/security/lockdown";
+    match fs::write(path, "none") {
+        Ok(_) => println!("[!] UWAGA: Udało się wyłączyć Lockdown (nie powinno się zdarzyć!)"),
+        Err(e) if e.kind() == std::io::ErrorKind::PermissionDenied => {
+            println!("[+] Lockdown jest wymuszony – nie można go wyłączyć (nawet jako root).");
+        }
+        Err(e) => println!("[?] Błąd zapisu do {}: {}", path, e),
+    }
+}
+
+fn test_dev_mem() {
+    let path = "/dev/mem";
+    match OpenOptions::new().read(true).open(path) {
+        Ok(_) => println!("[!] UWAGA: Udało się otworzyć /dev/mem (Lockdown nie działa!)"),
+        Err(e) if e.kind() == ErrorKind::PermissionDenied => {
+            println!("[+] /dev/mem: dostęp zablokowany przez Lockdown (EPERM).");
+        }
+        Err(e) => println!("[?] Błąd otwarcia /dev/mem: {:?}", e.kind()),
+    }
 }
