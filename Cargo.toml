@@ -23,12 +23,10 @@ name = "FearInit"
 path = "main.rs"
 
 [dependencies]
-souls = { git = "https://github.com/Secure-Your-Soul/SoulAPI.git", branch = "feat/rust-rewrite", features = ["default"] }
-#tikv-jemallocator = "0.6" # jemalloc
-tokio = { version = "1", features = ["full"] } # Async
+souls = { git = "https://github.com/Secure-Your-Soul/SoulAPI.git", branch = "feat/rust-rewrite", features = ["sdk"] }
 nix = { version = "0.29", features = ["mount", "process", "sched", "fs", "signal", "user"] }
 #libseccomp = "0.3" # To Block syscalls
-seccompiler = "0.5.0" # Rust alternative for libseccomp
+seccompiler = "0.5" # Rust alternative for libseccomp
 signal-hook = "0.3"
 sysinfo = "0.33"
 
