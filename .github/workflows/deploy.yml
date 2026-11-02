@@ -306,6 +306,11 @@ jobs:
           
       - name: Create Tag
         run: |
+          TAG="v${{ needs.check.outputs.version }}"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "::error::Tag $TAG already exists"
+            exit 1
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git tag "v${{ needs.check.outputs.version }}"

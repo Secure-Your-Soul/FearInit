@@ -46,10 +46,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     server_status();
     verify_programs();
-
-    // Security Tests
-    test_lockdown_disable();
-    test_dev_mem();
+    security_tests();
 
     // Signals configuration + SIGCHLD (so the kernel notifies us when a child dies!)
     let mut signals = Signals::new([
@@ -135,6 +132,11 @@ fn verify_programs() {
         println!("Verify Error");
     }
     println!("Verify Done");
+}
+
+fn security_tests() {
+    test_lockdown_disable();
+    test_dev_mem();
 }
 
 fn test_lockdown_disable() {
