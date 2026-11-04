@@ -144,17 +144,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ps-rusty_alloc"
-version = "2.3.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5a13a055658721895fcb02177f97dfff0c30fce5ee8fe425b45ef7c1a26be744"
-dependencies = [
- "libc",
- "portable-atomic",
- "windows-sys 0.60.2",
-]
-
-[[package]]
 name = "quote"
 version = "1.0.47"
 source = "registry+https://github.com/rust-lang/crates.io-index"
