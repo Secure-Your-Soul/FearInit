@@ -232,15 +232,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "souls-sdk"
-version = "0.0.1"
-source = "git+https://github.com/Secure-Your-Soul/SoulAPI.git?branch=feat%2Frust-rewrite#90945040f8314b46bf683a07131228ba10b888ce"
-dependencies = [
- "ps-rusty_alloc",
- "rustix",
-]
-
-[[package]]
 name = "syn"
 version = "2.0.119"
 source = "registry+https://github.com/rust-lang/crates.io-index"
