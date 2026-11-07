@@ -122,13 +122,13 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-      
+
       - name: Get Version
         id: ver
         run: |
           V=$(grep -m1 '^version' Cargo.toml | sed -E 's/.*"([^"]+)".*/\1/')
           echo "version=$V" >> "$GITHUB_OUTPUT"
-          
+
       - name: Check if tag exists
         id: check
         run: |
@@ -163,7 +163,7 @@ jobs:
           - target: x86_64-unknown-linux-musl
             cpu: x86-64-v4
             name: x86_64-v4
-            
+
         # --- aarch64 ---
           - target: aarch64-unknown-linux-musl
             cpu: generic
@@ -259,6 +259,7 @@ jobs:
             cpu: sifive-u74
             name: riscv64-sifive-u74
             experimental: true
+
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -266,6 +267,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@a2627de80e5819949c7e1c83ed99b29085fc9bc4 # v1.98.1
         with:
           targets: ${{ matrix.target }}
+
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           key: ${{ matrix.target }}-${{ matrix.cpu }}
@@ -303,7 +305,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-          
+
       - name: Create Tag
         run: |
           TAG="v${{ needs.check.outputs.version }}"
